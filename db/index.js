@@ -9,16 +9,11 @@ const client = new Client({
  * USER Methods
  */
 
-async function createUser({ 
-  username, 
-  password,
-  name,
-  location
-}) {
+async function createUser({  username,password,name,location}) {
   try {
     const { rows: [ user ] } = await client.query(`
-      INSERT INTO users(username, password, name) 
-      VALUES($1, $2, $3) 
+      INSERT INTO users(username, password, name, location) 
+      VALUES($1, $2, $3, $4) 
       ON CONFLICT (username) DO NOTHING 
       RETURNING *;
     `, [username, password, name, location]);
@@ -57,7 +52,7 @@ async function updateUser(id, fields = {}) {
 async function getAllUsers() {
   try {
     const { rows } = await client.query(`
-      SELECT id, username, name, location, active 
+      SELECT id, username, name, location, active
       FROM users;
     `);
   
@@ -99,10 +94,11 @@ async function getUserByUsername(username) {
     `, [ username ]);
 
     if (!user) {
-      throw {
-        name: "UserNotFoundError",
-        message: "A user with that username does not exist"
-      }
+      // throw {
+      //   name: "UserNotFoundError",
+      //   message: "A user with that username does not exist"
+      // }
+      return null;
     }
 
     return user;
@@ -132,6 +128,18 @@ async function createPost({
 
     return await addTagsToPost(post.id, tagList);
   } catch (error) {
+    throw error;
+  }
+}
+
+async function deletePost(postId){
+  try{
+    await client.query(`DELETE FROM post_tags WHERE "postId"=$1;`, [postId]);
+    const {rows:[post]} = await client.query(
+      `DELETE FROM posts WHERE id=$1 RETURNING *`, [postId]
+    );
+    return post;
+  }catch(error){
     throw error;
   }
 }
@@ -283,7 +291,7 @@ async function getPostsByTagName(tagName) {
 
 async function createTags(tagList) {
   if (tagList.length === 0) {
-    return;
+    return tagList;
   }
 
   const valuesStringInsert = tagList.map(
@@ -357,6 +365,7 @@ async function getAllTags() {
 module.exports = {  
   client,
   createUser,
+  deletePost,
   updateUser,
   getAllUsers,
   getUserById,

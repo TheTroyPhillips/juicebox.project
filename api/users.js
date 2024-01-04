@@ -13,9 +13,7 @@ usersRouter.get('/', async (req, res, next) => {
   try {
     const users = await getAllUsers();
   
-    res.send({
-      users
-    });
+    res.send({users});
   } catch ({ name, message }) {
     next({ name, message });
   }
